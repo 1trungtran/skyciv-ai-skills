@@ -35,7 +35,10 @@ load-combinations      → factor those loads into code-correct combinations on 
   ↓
 s3d-api                → solve
   ↓
-analysis-results       → fetch and interpret the results, then run-quick-design for member/connection checks
+analysis-results       → fetch and interpret the results
+  ↓
+s3d-api (S3D.design)   → steel/CFS/timber member design via S3D.design.member.check (preferred where the code is supported);
+                         run-quick-design for concrete, connections, and codes Member Design does not cover
   ↓
 renderer               → visualize the model and results
   ↓
@@ -44,13 +47,13 @@ qa-engineer            → independent review of the results
 
 `skyciv-api-v3` is the foundation every `*-api` skill depends on — it covers auth, session management (`S3D.session.start`), and the shared request/response envelope (`{ auth, options, functions }`) that every other API skill's calls are built on. Any skill that calls the SkyCiv API states this prerequisite at the top of its `SKILL.md`.
 
-- `s3d-api` — full `s3d_model` JSON schema; `S3D.model`, `S3D.results`, `S3D.file`, `S3D.SB` namespaces.
+- `s3d-api` — full `s3d_model` JSON schema; `S3D.model`, `S3D.results`, `S3D.file`, `S3D.SB`, `S3D.design` namespaces. **`S3D.design.member.check` is the preferred method for steel, cold-formed steel and timber member design** whenever it supports the design code. **Concrete is the exception: always use the `run-quick-design` concrete calculators, never `S3D.design.rc.check`.** It handles load combinations, effective lengths/bracing and grouping automatically. Only use `run-quick-design` member calculators when Member Design doesn't cover the code or edition. The rule and mapping table are in the "S3D.design Functions" section.
 - `s3d-apps` — sits alongside this pipeline, not inside it: builds custom client-side mini-apps that run *embedded inside* the S3D application itself (`S3D.structure.*`, `S3D.graphics.*`, `S3D.API.S3D2API`), reusing the same `s3d_model` schema as `s3d-api` but with no auth/session calls (the app runs inside an already-open session).
 - `analysis-results` — documentation-only skill for the analysis results object returned after a solve (reactions, per-station member/plate forces/stresses/displacements, min/max summaries); covers both the `S3D.results.get` API path and the `S3D.solver.isSolved` / `S3D.results.getAll` / `S3D.API.output.S3D2API` client-side S3D App path. No API namespace of its own — cross-linked from `s3d-api` and `s3d-apps` rather than duplicated there.
 - `cloudcad-api` — 2D CAD drawing schema; `cloudcad.model` and `cloudcad.file` namespaces; can map into an S3D model.
 - `load-gen-api` — wind/snow/seismic lookups via `standalone.loads`. Always open the session with `standalone.loads.start`, not `S3D.session.start` — confirmed against the live API that the latter breaks `standalone.loads.getLoads` (a generic, non-obvious failure on the *second* call, not on session start itself). If an app needs both an S3D model and a load-gen-api lookup, run them as separate sessions, each with its own matching `*.start` call.
 - `load-combinations` — documentation-only skill for the `s3d_model` load-combination data model (`load_combinations`, `load_cases`, `load_combination_settings`) and code-correct combination sets; no API namespace of its own — combos are written directly into the model consumed by `s3d-api`, with the `7000-load-combination-generator` Quick Design calculator as an optional generator.
-- `run-quick-design` — a separate REST endpoint (`POST https://qd.skyciv.com/run`, its own API-token auth, not the `skyciv-api-v3` envelope) that runs any of 154 standalone calculators by UID.
+- `run-quick-design` — a separate REST endpoint (`POST https://qd.skyciv.com/run`, its own API-token auth, not the `skyciv-api-v3` envelope) that runs any of 154 standalone calculators by UID. Its `SKILL.md` also covers the S3D side of a calc pack ("How to integrate a calc pack with S3D"): `s3d_integration.js`, the hidden `analysis_results` `custom_object` input, `hide_in_s3d`, and the `calculate.js` switch that prefers `analysis_results` over the manual loads.
 - `renderer` — client-side JS library (`SKYCIV.renderer`), not a server API; visualizes an `s3d_model` fetched via the API.
 - `schema-agent` — vision/DXF interpretation persona feeding `s3d-api`.
 - `section-selector` — section library lookup and injection helper for `s3d-api`; maps country/material/role to the correct `load_section` path from `section_tree.json`, or builds concrete sections as template-shape objects. Used whenever a model needs real section geometry.

@@ -42,7 +42,7 @@ Skills are designed to work together:
 
 ```
 skyciv-api-v3    → Core auth + request envelope (prerequisite for all API skills)
-s3d-api          → Build and solve structural models
+s3d-api          → Build and solve structural models; steel/CFS/timber member design via S3D.design.member.check (preferred over Quick Design where the code is supported)
 s3d-apps         → Build custom client-side mini-apps embedded inside S3D itself
 analysis-results → Read and interpret the results object returned after a solve
 cloudcad-api     → Generate CAD drawings from models
@@ -51,7 +51,7 @@ load-gen-api     → Retrieve wind/snow/seismic loads by location
 load-combinations → Factor those loads into code-correct combinations on the model
 schema-agent     → Interpret floor plans (DXF/image) into a structural schema
 section-selector → Select and inject the right section from the library into an S3D model
-run-quick-design → Run pre-built SkyCiv calculators
+run-quick-design → Run pre-built SkyCiv calculators (all concrete design, connections, foundations, and codes S3D Member Design doesn't cover)
 baseplate        → Design and detail steel baseplates
 qa-engineer      → Review and validate engineering outputs
 ```
