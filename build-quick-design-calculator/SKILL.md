@@ -275,19 +275,14 @@ Full list: `quick-design-ui-helpers.md`.
 ## `s3d_integration.js` — batch-run over a Structural 3D model
 
 `module.exports = function (s3d_model, analysis_results) { ... }` returns an **array of input
-objects**; each entry is run through `calculate.js` as one batch row. Throw if
-`!analysis_results` (model not solved) or if no members qualify — that message is what the user sees.
-
-Iterate `s3d_model.elements` (**not** `.members` — this file uses the UI model format) and convert
-every value with `UnitHelpers.convert(value, s3d_model.settings.units.<quantity>, "<target>")`, since
-model units vary. Force helpers: `StructureHelpers.getDesignForces(analysis_results)` (worst +/− per
-member per action with the governing load combination), `.getMemberLength(model, id, offsets)`, and
-`.ezDesignForces(analysis, model, action_list, include_lc)` (max/min/abs_max per action — express
-when `include_lc = false`, per-station per-combination when `true`). Result keys `s3d_symbol` /
-`s3d_info` control the S3D results table.
-
-Test by saving a Draft and running `S3D.quick_design.import("my-uid")` in the S3D console. Full
-worked aluminium integration: `quick-design-s3d.md`.
+objects**, one per member, each run through `calculate.js`. Throw if `!analysis_results` or no
+members qualify. Iterate `s3d_model.elements` (UI format) and convert every value from
+`s3d_model.settings.units`. A complete integration is three pieces: this file, a hidden
+`analysis_results` `custom_object` input plus `hide_in_s3d` on the manual loads in `config.json`,
+and a `calculate.js` that prefers `analysis_results` over the manual loads. **Load
+`references/s3d-integration.md` before writing any of it.** It covers helpers, units, load-combination
+choice, sign conventions, section shapes, testing and a checklist. Its official counterpart,
+`quick-design-s3d.md`, has an outdated example.
 
 ---
 
@@ -341,7 +336,7 @@ Passing tests prove the code, not the engineering.
 
 Bundled under `assets/documentation/`. Load one only when you reach that step.
 
-| Load when… | File (`assets/documentation/…`) |
+| Load when… | File (`assets/documentation/…` unless `references/`) |
 |---|---|
 | Any `config.json` field | `quick-design-config.md` |
 | `calculate.js` — output object, PrettyPrint, errors, logging | `quick-design-calculate.md` |
@@ -351,7 +346,8 @@ Bundled under `assets/documentation/`. Load one only when you reach that step.
 | SVG — basics, then loads/bolts/axes/concrete sections | `quick-design-svg.md`, `quick-design-svg-extended.md` |
 | A steel section profile, or properties of a custom shape | `quick-design-sections.md`, `quick-design-section-props.md` |
 | Sections or materials from the SkyCiv database | `quick-design-sb-integration.md` |
-| Structural 3D integration, or the 3D renderer | `quick-design-s3d.md`, `quick-design-renderer.md` |
+| Structural 3D integration (`s3d_integration.js`) | `references/s3d-integration.md` first, then `quick-design-s3d.md` for helper output shapes |
+| The 3D renderer | `quick-design-renderer.md` |
 | `requireUtil` / `requireJSON` / `requireCSV` | `quick-design-advanced.md` |
 | Chaining a published calculator, or batch-run columns | `quick-design-integrating-qds.md`, `quick-design-batch.md` |
 | Jest unit tests, or a chart | `quick-design-unit-testing.md`, `quick-design-chartjs.md`, `quick-design-plotlyjs.md` |

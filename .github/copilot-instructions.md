@@ -52,8 +52,10 @@ load-combinations → Factor those loads into code-correct combinations on the m
 schema-agent     → Interpret floor plans (DXF/image) into a structural schema
 section-selector → Select and inject the right section from the library into an S3D model
 run-quick-design → Run pre-built SkyCiv calculators (all concrete design, connections, foundations, and codes S3D Member Design doesn't cover)
+build-quick-design-calculator → Author your own Quick Design calc pack, including S3D integration (s3d_integration.js)
 baseplate        → Design and detail steel baseplates
 qa-engineer      → Review and validate engineering outputs
+skill-writer     → Author and validate skills in this repo (run scripts/validate_skill.py before shipping)
 ```
 
 ## README Requirements

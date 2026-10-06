@@ -210,7 +210,7 @@ keyed per meshed element instead of per corner node.
   or `member_maximums` per member) as their design-load inputs.
 - A Quick Design calc pack's `s3d_integration.js` reads the legacy `S3D.results.getAll(true)` array (not the API
   shape above) through `StructureHelpers.ezDesignForces`; see
-  the [S3D integration section of `run-quick-design`](../run-quick-design/SKILL.md#how-to-integrate-a-calc-pack-with-s3d).
+  the [S3D integration guide in `build-quick-design-calculator`](../build-quick-design-calculator/references/s3d-integration.md).
 - [`qa-engineer`](../qa-engineer/SKILL.md) reviews should cross-check `S3D.solver.getLastSolveInfo()`
   warnings alongside the numeric peaks here before signing off a result set.
 - For a downloadable report instead of raw data, see

@@ -1154,7 +1154,7 @@ A Quick Design calculator needs all of these extracted and passed in by hand: fo
 - the user explicitly asks for an **edition** that only Quick Design has, e.g. AISC 360-22 or CSA S16-24. Member Design covers AISC 360-16/360-10 and CSA S16-14. If the user just says "AISC" or "CSA S16" without an edition, use Member Design and say which edition you used.
 - it isn't a member check. Examples: connections, bolt/weld groups, base plates, lifting lugs, plates, footings, purlin-specific calcs, scaffolding, loads.
 - there is no S3D model. It's a one-off hand check of a single member with known forces.
-- you're writing a Quick Design calc pack's `s3d_integration.js`. That workflow is Quick Design by definition. See [`run-quick-design`](../run-quick-design/SKILL.md#how-to-integrate-a-calc-pack-with-s3d).
+- you're writing a Quick Design calc pack's `s3d_integration.js`. That workflow is Quick Design by definition. See [`build-quick-design-calculator`](../build-quick-design-calculator/references/s3d-integration.md).
 
 | Quick Design calculator | Use this Member Design `design_code` instead |
 |---|---|

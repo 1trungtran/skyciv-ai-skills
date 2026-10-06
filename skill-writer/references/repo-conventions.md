@@ -50,7 +50,10 @@ load-combinations      → factor those loads into code-correct combinations on 
   ↓
 s3d-api                → solve
   ↓
-analysis-results       → fetch and interpret the results, then run-quick-design for member/connection checks
+analysis-results       → fetch and interpret the results
+  ↓
+s3d-api (S3D.design)   → steel/CFS/timber member design via S3D.design.member.check (preferred where the code is supported);
+                         run-quick-design for concrete, connections, and codes Member Design does not cover
   ↓
 renderer               → visualize the model and results
   ↓
