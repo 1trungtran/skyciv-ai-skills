@@ -203,9 +203,14 @@ keyed per meshed element instead of per corner node.
 
 - Pass this object straight to [`S3D.results.set`](../s3d-api/SKILL.md#s3dresultsset) to load
   results computed elsewhere (a different solve, a cached run) back into a session for reporting.
-- [`run-quick-design`](../run-quick-design/SKILL.md) member/connection checks consume the peak
-  forces/stresses from here (typically `member_peak_results` or `member_maximums` per member) as
-  their design-load inputs.
+- For **steel, cold-formed steel and timber member design**, prefer [`S3D.design.member.check`](../s3d-api/SKILL.md#s3ddesign-functions).
+  It reads these results itself, across every load combination, so you don't extract forces by hand.
+- [`run-quick-design`](../run-quick-design/SKILL.md) checks (all concrete design, connections, or member codes that Member
+  Design doesn't support) consume the peak forces/stresses from here (typically `member_peak_results`
+  or `member_maximums` per member) as their design-load inputs.
+- A Quick Design calc pack's `s3d_integration.js` reads the legacy `S3D.results.getAll(true)` array (not the API
+  shape above) through `StructureHelpers.ezDesignForces`; see
+  the [S3D integration section of `run-quick-design`](../run-quick-design/SKILL.md#how-to-integrate-a-calc-pack-with-s3d).
 - [`qa-engineer`](../qa-engineer/SKILL.md) reviews should cross-check `S3D.solver.getLastSolveInfo()`
   warnings alongside the numeric peaks here before signing off a result set.
 - For a downloadable report instead of raw data, see

@@ -1,6 +1,8 @@
 # S3D Agent Skill
 
-You are an agent that builds, analyses, and queries SkyCiv Structural 3D (S3D) structural models via the SkyCiv API. This skill covers the full `s3d_model` JSON schema and every function in the `S3D.model`, `S3D.results`, `S3D.file`, and `S3D.SB` namespaces.
+You are an agent that builds, analyses, and queries SkyCiv Structural 3D (S3D) structural models via the SkyCiv API. This skill covers the full `s3d_model` JSON schema and every function in the `S3D.model`, `S3D.results`, `S3D.file`, and `S3D.SB` namespaces, plus the `S3D.design` member/RC design checks.
+
+> **Designing members? Use `S3D.design.member.check` first.** If the design code is in the [supported list](#supported-member-design_code-values), design the members in the solved model with `S3D.design.member.check`, not with a [`run-quick-design`](../run-quick-design/SKILL.md) calculator. Only use Quick Design when Member Design can't do the job. See [S3D.design Functions](#s3ddesign-functions).
 
 > **Prerequisite:** Always begin a session with `S3D.session.start` as the first function. See the `skyciv-core` skill for auth, options, and the request/response envelope.
 
@@ -1125,6 +1127,101 @@ General Section Designer — FEA-based RC section capacity check.
 | `steel_grade` | e.g. `"Grade 60"` (ACI) |
 | `reinforcement` | Array of `{z, y, diam}` |
 | `loads` | Array of `{N, M_z, M_y}` |
+
+---
+
+## S3D.design Functions
+
+Design checks for the model in the current session. Requires `S3D.model.set` earlier in the session. If the model hasn't been solved yet, the API may call `S3D.model.solve` for you. That uses an extra credit, and the response says so.
+
+### Member Design vs Quick Design: which to use
+
+**Scope:** this preference applies to **steel, cold-formed steel and timber only**. **Concrete is the opposite: always use the Quick Design concrete calculators**, never `S3D.design.rc.check` (see [below](#s3ddesignrcgetinput--s3ddesignrccheck)).
+
+**Rule:** if the member's material and design code appear in the [supported `design_code` list](#supported-member-design_code-values), **use `S3D.design.member.check`**. Use a [`run-quick-design`](../run-quick-design/SKILL.md) calculator only when one of the exceptions below applies.
+
+**Why Member Design wins:** it works on the whole solved model, not on one member and one set of loads typed in by hand. It automatically:
+- runs **every load combination** in the model and reports the worst one per member,
+- works out **effective lengths and bracing/restraints** from the model's connectivity (continuous members, intermediate nodes, connecting members),
+- handles **member grouping** (continuous members designed as one physical member),
+- gives one HTML/PDF report for the whole structure.
+
+A Quick Design calculator needs all of these extracted and passed in by hand: forces from one combination, effective lengths, and restraint assumptions. Each one is a place to make a mistake. Quick Design calculators are still accurate and well tested. They are just the second choice whenever Member Design covers the same code.
+
+**Use Quick Design instead when:**
+- the code or material isn't in the list. Examples: all aluminium (AS/NZS 1664, ADM, CSA S157, EN 1999), CSA O86, EN 1995, NZS 1720, and any steel/timber code not listed.
+- the member is **concrete** (beams, columns, slabs, walls, footings). Always use the Quick Design concrete calculators. See the [catalogue](../run-quick-design/assets/catalogue.md) Concrete and Foundation sections.
+- the user explicitly asks for an **edition** that only Quick Design has, e.g. AISC 360-22 or CSA S16-24. Member Design covers AISC 360-16/360-10 and CSA S16-14. If the user just says "AISC" or "CSA S16" without an edition, use Member Design and say which edition you used.
+- it isn't a member check. Examples: connections, bolt/weld groups, base plates, lifting lugs, plates, footings, purlin-specific calcs, scaffolding, loads.
+- there is no S3D model. It's a one-off hand check of a single member with known forces.
+- you're writing a Quick Design calc pack's `s3d_integration.js`. That workflow is Quick Design by definition. See [`run-quick-design`](../run-quick-design/SKILL.md#how-to-integrate-a-calc-pack-with-s3d).
+
+| Quick Design calculator | Use this Member Design `design_code` instead |
+|---|---|
+| `2015-as4100-i-beam-capacity-calculator` (AS 4100:2020) | `AS_4100-2020` |
+| `2017-eu-i-beam-capacity-calculator` (EN 1993-1-1) | `EN_1993-1-1-2005` |
+| `2002-steel-i-beam-capacity-calculator`, `2006-aisc-angle-…`, `2007-aisc-c-beam-…` (AISC 360-16) | `AISC_360-16_LRFD` / `AISC_360-16_ASD` |
+| `2018-aisc-i-beam-capacity-calculator` (AISC 360-22) | `AISC_360-16_LRFD` / `_ASD`, unless the user requires the 360-22 edition |
+| `2021-nz-steel-calculator` (NZS 3404:1997) | `NZS_3404-1997` |
+| `2012-csa-i-beam` (CSA S16-14) | `CSA_S16-14` |
+| `2022-csa-steel-calculator` (CSA S16-24) | `CSA_S16-14`, unless the user requires the S16-24 edition |
+| `2304-as4600-cfs-design-calculator` (AS/NZS 4600:2018) | `ASNZS_4600-2018` (or `AS_4600-2018`) |
+| `2305-aisi-cfs-design-calculator` (AISI S100-16) | `AISI_S100-16_LRFD` / `_ASD` / `_LSD` |
+| `4005-as1720-wood-beam-calculator` (AS 1720.1:2010) | `AS_1720-2010` |
+| `4003-nds-wood-beam-calculator` (NDS 2018) | `NDS_2018_LRFD` / `NDS_2018_ASD` |
+
+### `S3D.design.member.check`
+
+Runs member design checks on every member of the model. Returns capacities, utility ratios, the governing load combination, and report links.
+
+| Key | Type | Required | Description |
+|---|---|---|---|
+| `design_code` | `string` | yes | One of the [supported values](#supported-member-design_code-values) |
+| `design_obj` | `object` | no | Design settings: section/material/effective-length overrides, deflection limits, etc. Get one from `S3D.design.member.getInput`, edit it, and pass it back. Leave it out to use the defaults the model implies. |
+| `exclude_results` | `[string]` | no | Result keys to leave out of the response to keep it small, e.g. `["capacity"]` |
+
+```json
+{
+  "function": "S3D.design.member.check",
+  "arguments": { "design_code": "AS_4100-2020" }
+}
+```
+
+The response `data` contains `capacity` (tension, compression, moments, shears per member), `ratio` (axial, moment, shear, combined, slenderness, displacement, and the worst load combination per member), `grouping`, `summary` (passed/failed members and the critical failure), and HTML/PDF report links. Show the engineer the critical utility ratio and the report link, not just pass/fail.
+
+### `S3D.design.member.getInput`
+
+Returns the default `design_obj` for a `design_code`, built from the current model. Use it when you need to change design settings before calling `S3D.design.member.check`.
+
+| Key | Type | Required | Description |
+|---|---|---|---|
+| `design_code` | `string` | yes | One of the [supported values](#supported-member-design_code-values) |
+
+### `S3D.design.member.optimize`
+
+Goes through the section library to find the lightest section that meets the utility limit.
+
+| Key | Type | Required | Description |
+|---|---|---|---|
+| `design_code` | `string` | yes | One of the [supported values](#supported-member-design_code-values) |
+| `simplified` | `boolean` | no | `true` returns the best result only; `false` returns every iteration |
+| `settings` | `object` | no | `max_ur`, `optimize_by` (array of ids), `section_height` `{min, max}`, `section_width` `{min, max}` |
+
+### Supported member `design_code` values
+
+| Material | `design_code` values |
+|---|---|
+| Steel (hot-rolled) | `AISC_360-16_LRFD`, `AISC_360-16_ASD`, `AISC_360-10_LRFD`, `AISC_360-10_ASD`, `AS_4100-2020`, `AS_4100-1998`, `EN_1993-1-1-2005`, `CSA_S16-14`, `NZS_3404-1997`, `BS_5950-1-2000`, `IS_800-2007_LSM`, `IS_800-1984_WSM` |
+| Cold-formed steel | `AISI_S100-16_LRFD`, `AISI_S100-16_ASD`, `AISI_S100-16_LSD`, `AISI_S100-12_LRFD`, `AISI_S100-12_ASD`, `ASNZS_4600-2018`, `AS_4600-2018`, `AS_4600-2005`, `EN1993-1-3-2006` |
+| Timber | `NDS_2018_LRFD`, `NDS_2018_ASD`, `AS_1720-2010` |
+
+Copy these strings exactly. Note `EN_1993-1-1-2005` has an underscore but `EN1993-1-3-2006` doesn't. The live docs are the source of truth: https://skyciv.com/api/v3/docs/S3D.design
+
+### `S3D.design.rc.getInput` / `S3D.design.rc.check`
+
+> **Don't use these for concrete design.** SkyCiv's RC member design is not currently recommended. Design concrete members with the [`run-quick-design`](../run-quick-design/SKILL.md) concrete calculators (see the Concrete section of the [catalogue](../run-quick-design/assets/catalogue.md)), even when the code below is supported. Only call `S3D.design.rc.*` if the user explicitly asks for it by name.
+
+Reinforced concrete member design for the model. `design_code`: `ACI_318`, `AS_3600`, `EN_2`, `CSA_A23`, `BS_8110`. `rc.check` returns flexure, crack width, shear, and deflection ratios per member, with pass/fail and HTML/PDF report links.
 
 ---
 

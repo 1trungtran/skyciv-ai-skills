@@ -43,7 +43,7 @@ This format is compatible with any assistant that can read markdown context — 
 | Skill | Folder | What it lets your agent do |
 |---|---|---|
 | **SkyCiv Core API** | [`skyciv-api-v3/`](./skyciv-api-v3/SKILL.md) | Foundation for every API skill below — auth, session management, the request/response envelope, and shared call patterns. Start here. |
-| **S3D (Structural 3D)** | [`s3d-api/`](./s3d-api/SKILL.md) | Build, solve, repair, and query full 3D structural models — nodes, members, plates, sections, materials, supports, loads, load combinations, and results. |
+| **S3D (Structural 3D)** | [`s3d-api/`](./s3d-api/SKILL.md) | Build, solve, repair, and query full 3D structural models — nodes, members, plates, sections, materials, supports, loads, load combinations, results, and member design checks (the preferred way to design members). |
 | **S3D Apps** | [`s3d-apps/`](./s3d-apps/SKILL.md) | Build custom, embeddable mini-apps that run client-side inside the S3D application itself — read/write the live model, react to the user's selection, and automate or generate model content. |
 | **Analysis Results** | [`analysis-results/`](./analysis-results/SKILL.md) | Fetch and interpret the analysis results object returned after a solve — reactions, member/plate forces, stresses, displacements, and min/max summaries — from either the API or an S3D App. |
 | **CloudCAD** | [`cloudcad-api/`](./cloudcad-api/SKILL.md) | Generate 2D engineering drawings — floor plans, dimensions, gridlines, annotations, tables — with optional mapping into a structural 3D model. |
@@ -74,7 +74,10 @@ load-combinations      → factor those loads into code-correct combinations on 
   ↓
 s3d-api                → solve
   ↓
-analysis-results       → fetch and interpret the results, then run-quick-design for member/connection checks
+analysis-results       → fetch and interpret the results
+  ↓
+s3d-api (S3D.design)   → steel/CFS/timber member design via S3D.design.member.check (preferred where the code is supported);
+                         run-quick-design for concrete, connections, and codes Member Design does not cover
   ↓
 renderer               → visualize the model and results
   ↓
