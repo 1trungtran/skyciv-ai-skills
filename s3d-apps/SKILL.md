@@ -417,6 +417,13 @@ S3D.structure.set(temp_s3d_model, null, true);
 | `isUndo` | boolean | Pass `true` so the change is captured as a single undoable step |
 | `callback` | function | Optional, runs after the model finishes loading |
 
+**Sections resolve asynchronously.** A `load_section` path or a template shape (`info`,
+e.g. a concrete rectangle) is built into a full section object by a round trip to the server.
+The resolved section (area, Iz, Iy, J) exists only once `set`'s `callback` runs, or in the
+callback of `S3D.API.API2S3D(apiModel, null, callback)`, never synchronously. Before writing
+code that creates a section or reads a new section's properties, read
+[references/resolving-sections.md](references/resolving-sections.md).
+
 Other top-level structure functions: `S3D.structure.get(options)` (pass `{ api_format: true }` to skip the `S3D2API` conversion yourself), `S3D.structure.clear()`, `S3D.structure.repair({ tasks: [...], force_repair })` (e.g. `merge_nodes`, `intersect_members`, `default_section`), `S3D.structure.COG(nodes, elements, plates, sections, materials)`, `S3D.structure.share(callback)`.
 
 ### Granular mutation helpers
